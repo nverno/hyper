@@ -30,11 +30,24 @@
 ;;; Code:
 
 (defgroup hyper nil
+  ""
   :group 'convenience)
+
+(defvar hyper-rb nil)
+(setq hyper-rb
+      (when load-file-name
+        (expand-file-name "build/main.rb" (file-name-directory load-file-name))))
 
 ;;;###autoload
 (defun hyper (&optional arg)
-  (interactive "P"))
+  (interactive "P")
+  (let* ((args (or arg (read-from-minibuffer "Hyperpolyglot lookup: ")))
+         (out (shell-command-to-string (format "ruby %s %s" hyper-rb args))))
+    (if (string-prefix-p "http://" out)
+        (browse-url out)
+      (let ((new-arg (ido-completing-read
+                  "Location: " (split-string out "\n" t "\\s-*"))))
+        (hyper (if arg (concat arg " " new-arg) new-arg))))))
 
 (provide 'hyper)
 
