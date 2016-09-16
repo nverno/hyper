@@ -29,26 +29,24 @@ module Hyper
     hrefs = page.at_xpath('//p').next.next
 
     # some pages have two sheets, one of which links to different page
-    if /^\// =~ hrefs.css('a').first['href']
-      hrefs = page.at_xpath('//p').next.next.next
-    end
+    hrefs = hrefs.next if /^\// =~ hrefs.css('a').first['href']
 
     # main sections
-    h = {}
-    hrefs.xpath('a').each do |x|
-      tag = x['href'][-1..1]
+    h = hrefs.xpath('a').each_with_object({}) do |x, h|
+      tag = x['href'][1..-1]
       h[tag] = {}
-      h[tag]["top"] = x['href']
+      h[tag][tag] = x.content
     end
 
     # add nodes for subsections
     h.each do |k, v|
-      section = page.at_css("#{v['top']}").at_xpath("ancestor::tr")
-      while !h.has_key? section.xpath("th/a/@id").text
-        unless section.xpath('td').empty?
-
-        end
-        section = section.next
+      section = page.at_css("##{k}").at_xpath("ancestor::tr").next
+      while !(section.nil? || h.has_key?(section.xpath("th/a/@id").text))
+          unless section.xpath('td').empty?
+            tmp = section.xpath('td[1]/a')
+            h[k][tmp.xpath('@id').text] = tmp.text if !tmp.nil?
+          end
+          section = section.next
       end
     end
     @@pages[path] = h
@@ -59,15 +57,19 @@ module Hyper
     @@index.keys
   end
 
-  def self.get_ids path
+  def self.get_sections path
     @@pages[path].keys
   end
 
-  def self.get_uri path, id
-    DOM + @@pages[path][id]
+  def self.get_ids path, section
+    @@pages[path][section].keys
   end
 
-  def self.lookup (page=nil, id=nil)
+  def self.get_uri path, id
+    DOM + path + '#' + id
+  end
+
+  def self.lookup (page=nil, section=nil, id=nil)
     parse_index if @@index.nil?
     if page.nil?
       get_index
@@ -75,13 +77,15 @@ module Hyper
       path = @@index[page]
       return nil if path.nil?
       parse_page path if @@pages[path].nil?
-      if id.nil?
-        get_ids path
+      if section.nil? && id.nil?
+        get_sections path
+      elsif id.nil?
+        get_ids path, section
       else
-        get_uri path, id rescue nil
+        get_uri(path, id) rescue nil
       end
     end
   end
 end
 
-Hyper.lookup "python", "functions"
+# Hyper.lookup "python", "functions"
