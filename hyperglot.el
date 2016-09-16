@@ -1,7 +1,7 @@
-;;; hyper --- navigate hyperglot.org from emacs -*- lexical-binding: t -*-
+;;; hyperglot --- navigate hyperglotglot.org from emacs -*- lexical-binding: t -*-
 
 ;; Author: Noah Peart <noah.v.peart@gmail.com>
-;; URL: https://github.com/nverno/hyper
+;; URL: https://github.com/nverno/hyperglot
 ;; Package-Requires: 
 ;; Copyright (C) 2016, Noah Peart, all rights reserved.
 ;; Created: 16 September 2016
@@ -25,30 +25,31 @@
 
 ;;; Commentary:
 
-;;  Navigate hyperglot.org from emacs.
+;;  Navigate hyperpolyglot.org from emacs.
 
 ;;; Code:
 
-(defgroup hyper nil
-  ""
-  :group 'convenience)
+(defgroup hyperglot nil
+  "Jump around hyperpolyglot"
+  :group 'convenience
+  :prefix "hyperglot-")
 
-(defvar hyper-rb nil)
-(setq hyper-rb
+(defvar hyperglot-rb nil)
+(setq hyperglot-rb
       (when load-file-name
         (expand-file-name "build/main.rb" (file-name-directory load-file-name))))
 
 ;;;###autoload
-(defun hyper (&optional arg)
+(defun hyperglot (&optional arg)
   (interactive "P")
   (let* ((args (or arg (read-from-minibuffer "Hyperpolyglot lookup: ")))
-         (out (shell-command-to-string (format "ruby %s %s" hyper-rb args))))
+         (out (shell-command-to-string (format "ruby %s %s" hyperglot-rb args))))
     (if (string-prefix-p "http://" out)
         (browse-url out)
       (let ((new-arg (ido-completing-read
-                  "Location: " (split-string out "\n" t "\\s-*"))))
-        (hyper (if arg (concat arg " " new-arg) new-arg))))))
+                  "Section/ID: " (split-string out "\n" t "\\s-*"))))
+        (hyperglot (concat args " " new-arg))))))
 
-(provide 'hyper)
+(provide 'hyperglot)
 
-;;; hyper.el ends here
+;;; hyperglot.el ends here
